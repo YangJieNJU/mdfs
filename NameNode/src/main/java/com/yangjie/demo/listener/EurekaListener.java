@@ -1,0 +1,49 @@
+package com.yangjie.demo.listener;
+
+import com.netflix.appinfo.InstanceInfo;
+import com.yangjie.demo.service.DataNodeSystem;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.netflix.eureka.server.event.*;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class EurekaListener {
+
+    @Autowired
+    public DataNodeSystem dataNodeSystem;
+
+    private Logger logger = Logger.getLogger(EurekaInstanceCanceledEvent.class);
+
+    @EventListener
+    public void listen(EurekaInstanceCanceledEvent event) {
+        logger.info(event.getAppName() + " Service Offline");
+        dataNodeSystem.deleteDataNode(event.getServerId());
+    }
+
+    @EventListener
+    public void listen(EurekaInstanceRegisteredEvent event) {
+        InstanceInfo instanceInfo = event.getInstanceInfo();
+        // 检查 status
+        if (instanceInfo.getStatus() == InstanceInfo.InstanceStatus.UP) {
+            logger.info(instanceInfo.getAppName() + "Register Start");
+            dataNodeSystem.addDataNode(instanceInfo.getInstanceId(),instanceInfo.getPort(),instanceInfo.getIPAddr());
+        }
+    }
+
+    @EventListener
+    public void listen(EurekaInstanceRenewedEvent event) {
+        logger.info(event.getAppName() + "Service renewed");
+    }
+
+    @EventListener
+    public void listen(EurekaRegistryAvailableEvent event) {
+        logger.info("Server Start");
+    }
+
+    @EventListener
+    public void listen(EurekaServerStartedEvent event) {
+        logger.info("Eureka Server Start");
+    }
+}
